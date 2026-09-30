@@ -30,8 +30,20 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — never commit secrets; the example file only lists variable names
 .env*
+!.env.example
+
+# testing artifacts
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/e2e/.auth/
+
+# supabase cli local state
+/supabase/.temp/
+/supabase/.branches/
 
 # vercel
 .vercel
