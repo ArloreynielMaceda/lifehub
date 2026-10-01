@@ -7,6 +7,7 @@ import { SidebarNav } from "@/components/app/sidebar-nav";
 import { UserMenu } from "@/components/app/user-menu";
 import { Logo } from "@/components/shared/logo";
 import { SetupRequired } from "@/components/shared/setup-required";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { NotificationBell } from "@/features/notifications/components/notification-bell";
 import { getNotificationSummary, syncNotifications } from "@/features/notifications/queries";
 import { getProfile, getSessionUser, initials } from "@/lib/auth";
@@ -50,6 +51,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Logo href="/dashboard" className="lg:hidden" />
             <div className="ml-auto flex items-center gap-1.5">
               <QuickAddMenu />
+              <ThemeToggle className="hidden sm:inline-flex" />
               <NotificationBell items={notifications.items} unreadCount={notifications.unreadCount} />
             </div>
           </header>

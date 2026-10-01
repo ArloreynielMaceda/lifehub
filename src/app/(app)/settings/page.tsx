@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { signOutEverywhere } from "@/features/settings/actions";
+import { AppearancePicker } from "@/features/settings/components/appearance-picker";
 import { ChangePasswordForm } from "@/features/settings/components/change-password-form";
 import {
   DeleteAccountSection,
@@ -63,6 +64,9 @@ export default async function SettingsPage() {
             timeZones={timeZones}
             emailConfigured={isEmailConfigured()}
           />
+        </Section>
+        <Section id="appearance" title="Appearance" description="Light, dark, or match your device.">
+          <AppearancePicker />
         </Section>
         <Section id="security" title="Password" description="Choose a strong password you don't use anywhere else.">
           <div className="sm:max-w-md">

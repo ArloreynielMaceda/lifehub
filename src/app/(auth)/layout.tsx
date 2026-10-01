@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { CompanionFigure } from "@/components/companion/companion";
 import { Logo } from "@/components/shared/logo";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 const POINTS = [
   { icon: CalendarCheck2, title: "Tasks and reminders", text: "Know what's due today and what's coming next." },
@@ -14,7 +15,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="grid min-h-dvh lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <div className="flex flex-col px-5 py-6 sm:px-10">
-        <Logo />
+        <div className="flex items-center justify-between gap-4">
+          <Logo />
+          <ThemeToggle />
+        </div>
         <main id="main" className="flex flex-1 items-center justify-center py-10">
           <div className="w-full max-w-sm">{children}</div>
         </main>

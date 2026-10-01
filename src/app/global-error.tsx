@@ -2,12 +2,17 @@
 
 import { useEffect } from "react";
 
+import { applyTheme, readThemePreference } from "@/components/theme/use-theme";
+
 import "./globals.css";
 
 export default function GlobalError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   useEffect(() => {
     console.error("[ui] fatal error", { digest: error.digest });
   }, [error]);
+
+  // This page replaces the root layout (and its theme script), so apply the saved theme here.
+  useEffect(() => applyTheme(readThemePreference()), []);
 
   return (
     <html lang="en">

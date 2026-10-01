@@ -8,9 +8,14 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPortal,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ThemeIcon, ThemeMenuItems } from "@/components/theme/theme-toggle";
 import { signOut } from "@/features/auth/actions";
 
 export function UserMenu({
@@ -53,6 +58,16 @@ export function UserMenu({
             <Settings aria-hidden="true" /> Preferences
           </Link>
         </DropdownMenuItem>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <ThemeIcon /> Theme
+          </DropdownMenuSubTrigger>
+          <DropdownMenuPortal>
+            <DropdownMenuSubContent className="w-36">
+              <ThemeMenuItems />
+            </DropdownMenuSubContent>
+          </DropdownMenuPortal>
+        </DropdownMenuSub>
         <DropdownMenuSeparator />
         <form action={signOut}>
           <DropdownMenuItem asChild>

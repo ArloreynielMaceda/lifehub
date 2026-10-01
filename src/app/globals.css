@@ -50,6 +50,8 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
   --color-canvas: var(--canvas);
+  --color-inverse: var(--inverse);
+  --color-inverse-foreground: var(--inverse-foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -113,6 +115,69 @@
   /* Soft lavender behind the companion — the only gradients in the UI. */
   --companion-from: oklch(0.978 0.012 286);
   --companion-to: oklch(0.905 0.05 284);
+  /* High-contrast band (landing page privacy section). */
+  --inverse: oklch(0.2 0.02 282);
+  --inverse-foreground: oklch(0.988 0.002 286);
+  --selection: oklch(0.9 0.05 285);
+  color-scheme: light;
+}
+
+/*
+ * Dark theme: deep cool-neutral surfaces that get lighter as they come forward
+ * (canvas < background < card < popover), with the indigo accent lifted to a soft periwinkle
+ * so it reads on dark. Like Material's dark scheme, primary buttons use dark text on the light
+ * accent. Contrast (WCAG): text >= 13:1, muted text >= 6.1:1, primary and status text >= 5.7:1
+ * on every surface; text on primary 7.5:1; chart series >= 5.4:1 on cards.
+ */
+.dark {
+  --background: oklch(0.19 0.015 282);
+  --canvas: oklch(0.165 0.013 282);
+  --foreground: oklch(0.95 0.008 285);
+  --card: oklch(0.222 0.017 282);
+  --card-foreground: oklch(0.95 0.008 285);
+  --popover: oklch(0.245 0.019 282);
+  --popover-foreground: oklch(0.95 0.008 285);
+  --primary: oklch(0.72 0.14 281);
+  --primary-foreground: oklch(0.17 0.03 282);
+  --secondary: oklch(0.265 0.017 282);
+  --secondary-foreground: oklch(0.95 0.008 285);
+  --muted: oklch(0.265 0.017 282);
+  --muted-foreground: oklch(0.72 0.016 282);
+  --accent: oklch(0.3 0.055 282);
+  --accent-foreground: oklch(0.85 0.08 283);
+  --destructive: oklch(0.72 0.16 25);
+  --destructive-soft: oklch(0.27 0.055 25);
+  --warning: oklch(0.82 0.12 78);
+  --warning-soft: oklch(0.28 0.045 75);
+  --success: oklch(0.78 0.11 160);
+  --success-soft: oklch(0.26 0.04 160);
+  --info: oklch(0.78 0.09 210);
+  --info-soft: oklch(0.26 0.035 210);
+  --border: oklch(0.31 0.017 282);
+  --input: oklch(0.37 0.019 282);
+  --ring: oklch(0.72 0.14 281);
+  --chart-1: #3fb984; /* income / single-series */
+  --chart-2: #8b84f2; /* expense */
+  --chart-3: #4f9ff0;
+  --chart-4: #f0875a;
+  --chart-5: #ec8fb4;
+  --chart-grid: #2b2b3a;
+  --chart-axis: #9c9db3;
+  --sidebar: oklch(0.19 0.015 282);
+  --sidebar-foreground: oklch(0.95 0.008 285);
+  --sidebar-primary: oklch(0.72 0.14 281);
+  --sidebar-primary-foreground: oklch(0.17 0.03 282);
+  --sidebar-accent: oklch(0.265 0.017 282);
+  --sidebar-accent-foreground: oklch(0.95 0.008 285);
+  --sidebar-border: oklch(0.31 0.017 282);
+  --sidebar-ring: oklch(0.72 0.14 281);
+  /* A dim indigo pool, so the companion still sits in soft light. */
+  --companion-from: oklch(0.27 0.035 284);
+  --companion-to: oklch(0.4 0.09 283);
+  --inverse: oklch(0.235 0.035 281);
+  --inverse-foreground: oklch(0.95 0.008 285);
+  --selection: oklch(0.42 0.1 282);
+  color-scheme: dark;
 }
 
 @layer base {
@@ -137,7 +202,7 @@
     @apply rounded-sm outline-2 outline-offset-2 outline-ring;
   }
   ::selection {
-    background: oklch(0.9 0.05 285);
+    background: var(--selection);
   }
 }
 

@@ -271,23 +271,23 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="privacy" aria-labelledby="privacy-heading" className="scroll-mt-20 border-t bg-foreground text-background">
+      <section id="privacy" aria-labelledby="privacy-heading" className="scroll-mt-20 border-t bg-inverse text-inverse-foreground">
         <div className="mx-auto grid max-w-7xl gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
           <div>
-            <p className="text-[0.6875rem] font-medium tracking-[0.12em] text-background/60 uppercase">Privacy &amp; security</p>
+            <p className="text-[0.6875rem] font-medium tracking-[0.12em] text-inverse-foreground/60 uppercase">Privacy &amp; security</p>
             <h2 id="privacy-heading" className="mt-4 font-display text-4xl leading-tight sm:text-5xl">
               Built for the things you&apos;d rather keep private.
             </h2>
-            <p className="mt-4 text-background/70">
+            <p className="mt-4 text-inverse-foreground/70">
               Bills, spending and personal documents deserve better than a spreadsheet in someone&apos;s shared drive.
             </p>
           </div>
           <ul className="grid gap-6 sm:grid-cols-2">
             {PRIVACY_POINTS.map(({ icon: Icon, title, text }) => (
-              <li key={title} className="rounded-2xl border border-background/15 p-6">
+              <li key={title} className="rounded-2xl border border-inverse-foreground/15 p-6">
                 <Icon className="size-5 text-[oklch(0.8_0.09_160)]" aria-hidden="true" />
                 <h3 className="mt-4 font-semibold">{title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-background/70">{text}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-inverse-foreground/70">{text}</p>
               </li>
             ))}
           </ul>
