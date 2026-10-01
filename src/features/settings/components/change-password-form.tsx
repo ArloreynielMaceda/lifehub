@@ -1,51 +1,38 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { FormAlert, PasswordInput, SubmitButton } from "@/components/shared/form-bits";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { STALE_SESSION_MESSAGE } from "@/lib/auth-recency";
 import { applyServerErrors } from "@/lib/forms";
 
-import { updatePassword } from "../actions";
-import { resetPasswordSchema } from "../schemas";
+import { changePassword } from "../actions";
+import { changePasswordSchema } from "../schemas";
 
-export function ResetPasswordForm({
-  submitLabel = "Update password",
-  redirectTo = "/dashboard",
-  onDone,
-}: {
-  submitLabel?: string;
-  redirectTo?: string | null;
-  onDone?: () => void;
-}) {
-  const router = useRouter();
+/** Settings → Password. Requires the current password; signs out other devices on success. */
+export function ChangePasswordForm() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const form = useForm({
-    resolver: zodResolver(resetPasswordSchema),
-    defaultValues: { password: "", confirmPassword: "" },
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: { currentPassword: "", password: "", confirmPassword: "" },
   });
 
   const onSubmit = form.handleSubmit((values) => {
     setServerError(null);
     startTransition(async () => {
-      const result = await updatePassword(values);
+      const result = await changePassword(values);
+      if (!result) return; // redirected to sign in
       if (!result.ok) {
-        // The reset window closed while the form was open: show the page's "fresh link" state.
-        if (result.error === STALE_SESSION_MESSAGE) router.refresh();
         applyServerErrors(form.setError, result.fieldErrors);
         setServerError(result.error);
         return;
       }
-      toast.success(result.message ?? "Password updated");
+      toast.success(result.message ?? "Password changed");
       form.reset();
-      onDone?.();
-      if (redirectTo) router.replace(redirectTo);
     });
   });
 
@@ -55,6 +42,17 @@ export function ResetPasswordForm({
     <form onSubmit={onSubmit} noValidate className="space-y-5">
       <FormAlert message={serverError} />
       <FieldGroup className="gap-4">
+        <Field data-invalid={!!errors.currentPassword}>
+          <FieldLabel htmlFor="current-password">Current password</FieldLabel>
+          <PasswordInput
+            id="current-password"
+            autoComplete="current-password"
+            aria-invalid={!!errors.currentPassword}
+            aria-describedby={errors.currentPassword ? "current-password-error" : undefined}
+            {...form.register("currentPassword")}
+          />
+          <FieldError id="current-password-error" errors={[errors.currentPassword]} />
+        </Field>
         <Field data-invalid={!!errors.password}>
           <FieldLabel htmlFor="new-password">New password</FieldLabel>
           <PasswordInput
@@ -84,8 +82,9 @@ export function ResetPasswordForm({
           <FieldError id="confirm-new-password-error" errors={[errors.confirmPassword]} />
         </Field>
       </FieldGroup>
+      <p className="text-xs text-muted-foreground">Changing your password signs you out on your other devices.</p>
       <SubmitButton pending={pending} pendingLabel="Saving…" className="w-full sm:w-auto">
-        {submitLabel}
+        Change password
       </SubmitButton>
     </form>
   );

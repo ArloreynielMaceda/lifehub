@@ -7,6 +7,8 @@
 | **Proxy** (`src/proxy.ts`) | Refreshes the Supabase session cookie on every request (`getClaims()` validates the JWT) and redirects signed-out visitors away from private routes. Private responses get `Cache-Control: private, no-store`. |
 | **App layout** | Re-checks the session server-side before rendering any private page. |
 | **Server Actions** | Every action re-authenticates (`getActionContext`), validates input with Zod, and never accepts `user_id` from the client. Malformed IDs are rejected before any query. |
+| **Sensitive account changes** | Changing the password in Settings and deleting the account require the current password, checked with a throwaway Supabase client (`src/lib/supabase/reauth.ts`) that never touches the browser's session. A password change signs out every other device. Setting a password *without* the old one (`/reset-password`) only works within 15 minutes of opening a reset link or signing in (`src/lib/auth-recency.ts`, from the JWT `amr` claim). Settings → **Sign out of all devices** ends every session. |
+| **Sign-up** | A sign-up stays inactive until the emailed link is opened (Supabase keeps it as "Waiting for verification"; it can't sign in). LifeHub data (the profile) is only created on confirmation. |
 | **Row Level Security** | Enabled on every table. Policies allow `select/insert/update/delete` only where `user_id = auth.uid()`. The `anon` role has no table access. |
 | **Column grants** | Clients can only write specific columns (e.g. they cannot set `user_id`, `completed_at`, a transaction's `currency`, or a notification's content). |
 | **Constraints & triggers** | Check constraints on lengths, amounts, enums, dates and storage paths; composite FKs tie bill history to the bill's owner, routine completions to the routine's owner, and bill-payment expenses to the payment's owner; quota trigger limits documents per user; a trigger only accepts routine completions on scheduled, non-future dates (user's time zone); a trigger stops a bill-payment expense's amount/type from being edited out of sync with the bill. |
@@ -47,6 +49,8 @@
 - [ ] Auth → Site URL and Redirect URLs list only your domains (no wildcards for arbitrary hosts).
 - [ ] Custom SMTP configured for auth emails (the built-in sender is heavily rate-limited).
 - [ ] Auth rate limits reviewed (sign-ups, sign-ins, password reset emails).
+- [ ] Abuse protection for sign-up, sign-in and password reset. Server Actions call Supabase from Vercel, so Supabase's per-IP limits see Vercel's IPs, not visitors'. Use Vercel Firewall rate-limit rules now; Supabase **CAPTCHA protection** (Cloudflare Turnstile) needs the auth forms to send a `captchaToken` first — **turning it on before that change breaks every sign-in**.
+- [ ] Auth → **Secure password change** ON (LifeHub already asks for the current password; this also makes Supabase require a recent sign-in).
 - [ ] `CRON_SECRET` is a long random value; cron route returns `401` without it.
 - [ ] Vercel: enable **Firewall / Attack Challenge Mode** or rate-limit rules if abuse appears (serverless in-memory rate limiting is unreliable, so rely on Supabase Auth limits + Vercel WAF).
 - [ ] Enable Supabase **Point-in-Time Recovery** or scheduled backups for production data.
@@ -60,5 +64,7 @@
 - Upload verification runs in the finalize step with the user's session; a user who bypasses the
   UI could mark their *own* unverified upload as ready, but files are only ever served back to
   their owner, with the bucket MIME allow-list still enforced by Storage.
+- `/reset-password` accepts a new password without the old one for 15 minutes after any sign-in
+  (not only after a reset link), because Supabase tokens don't reliably say which method was used.
 - The document quota trigger counts rows without a lock; two simultaneous uploads at the limit
   could exceed it by one.

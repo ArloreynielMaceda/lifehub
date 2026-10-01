@@ -107,3 +107,30 @@ Status legend: `[x]` done · `[ ]` pending · `[~]` blocked on an external depen
 - [~] Real sign-up/verification emails, full E2E flows and the live RLS suite — need a Supabase project (`TEST_SUPABASE_*`).
 - [~] Email reminder delivery — needs `RESEND_API_KEY`, `EMAIL_FROM` and a verified sending domain.
 - [~] Vercel deployment and cron execution — needs a Vercel project and `CRON_SECRET`.
+
+## Iteration 3 — Email confirmation & security fixes (2026-10-02)
+
+### Email confirmation that actually confirms
+- [x] After sign-up: "Confirm your email" screen with a 3-step tracker; the account is clearly inactive until the link is opened. Resend with a 60-second cooldown, "Wrong email? Change it", tips. Notices when the link was opened in another tab and moves on.
+- [x] Links land on `/verify-email`: **Email confirmed** (signed in, "Go to my dashboard"), **Email confirmed — sign in** (opened in another browser), or **This link has expired** (send a new link).
+- [x] Migration `20261002000100_profiles_on_confirmation.sql`: the LifeHub profile is created on confirmation, not at sign-up (additive; not yet applied to Supabase Cloud).
+- [x] Confirmation template now links to `/verify-email`.
+
+### Security audit fixes
+- [x] B1: Settings → Change password requires the current password (checked with a throwaway client), changes it through the fresh session and signs out other devices; account deletion requires the password; `/reset-password` only sets a password without the old one within 15 minutes of a reset link / sign-in.
+- [x] C4: Settings → **Sign out of all devices**.
+- [x] C2: documents are uploaded with `cacheControl: 0` instead of 1 hour.
+- [~] Needs Supabase/Vercel settings: Secure password change, Vercel Firewall rate limits — see docs/SECURITY.md checklist.
+- [ ] B2: Turnstile CAPTCHA on the auth forms (needs a Cloudflare Turnstile site key; enable Supabase CAPTCHA only after the forms send tokens).
+- [ ] Deferred: nonce-based CSP (C1), locking document status/overwrites server-side (C3, needs the secret key in finalize), notification sync throttling (C5), per-account quotas (C6).
+
+### Iteration 3 verification (executed)
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` | ✅ 0 errors |
+| `npm run lint` | ✅ 0 errors, 0 warnings |
+| `npx vitest run` | ✅ 202 passed, 10 skipped (live Supabase suite) — unit 63, actions 80, db 59 |
+| `npm run build` | ✅ success |
+| Playwright smoke (desktop + mobile) | ✅ 16 passed (new: expired confirmation page) |
+| Visual QA 320 px / 1280 px | ✅ `/verify-email` states, no horizontal scroll |
+| Full sign-up / settings E2E flows | [~] not run — need a test Supabase project (`TEST_SUPABASE_*`) |

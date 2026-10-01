@@ -28,6 +28,7 @@ const BOOTSTRAP_SQL = `
     id uuid primary key,
     email text,
     raw_user_meta_data jsonb not null default '{}'::jsonb,
+    email_confirmed_at timestamptz,
     created_at timestamptz not null default now()
   );
   create function auth.uid() returns uuid language sql stable as $$
@@ -92,16 +93,24 @@ export async function createTestDatabase(): Promise<PGlite> {
   return db;
 }
 
+/**
+ * Inserts a user the way Supabase Auth does. `confirmed: false` leaves it as a pending sign-up
+ * (email_confirmed_at null) until `confirmUser` is called, like opening the confirmation link.
+ */
 export async function createUser(
   db: PGlite,
   id: string,
   metadata: Record<string, unknown> = {},
+  { confirmed = true }: { confirmed?: boolean } = {},
 ): Promise<void> {
-  await db.query("insert into auth.users (id, email, raw_user_meta_data) values ($1, $2, $3)", [
-    id,
-    `${id.slice(0, 8)}@example.test`,
-    JSON.stringify(metadata),
-  ]);
+  await db.query(
+    "insert into auth.users (id, email, raw_user_meta_data, email_confirmed_at) values ($1, $2, $3, $4)",
+    [id, `${id.slice(0, 8)}@example.test`, JSON.stringify(metadata), confirmed ? new Date().toISOString() : null],
+  );
+}
+
+export async function confirmUser(db: PGlite, id: string): Promise<void> {
+  await db.query("update auth.users set email_confirmed_at = now() where id = $1", [id]);
 }
 
 type Role = "authenticated" | "anon" | "service_role";

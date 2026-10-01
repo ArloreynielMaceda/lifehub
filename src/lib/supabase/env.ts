@@ -28,11 +28,21 @@ export function requireSupabasePublicEnv(): { url: string; key: string } {
   return env;
 }
 
-/** Absolute site URL used for auth email links. */
+const LOCAL_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i;
+
+/**
+ * Configured absolute site URL, for places without a request (metadata, scheduled emails).
+ * Request handlers should prefer the request's own origin (see `getRequestOrigin`).
+ *
+ * Order: NEXT_PUBLIC_SITE_URL → Vercel production URL → Vercel deployment URL → localhost.
+ * A localhost NEXT_PUBLIC_SITE_URL (e.g. copied from .env.local) is ignored on Vercel, so a
+ * deployed site never sends people to localhost.
+ */
 export function getSiteUrl(): string {
-  const explicit = process.env.NEXT_PUBLIC_SITE_URL;
-  if (explicit) return explicit.replace(/\/+$/, "");
-  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL ?? process.env.VERCEL_URL;
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+  const onVercel = Boolean(process.env.VERCEL);
+  if (explicit && !(onVercel && LOCAL_ORIGIN.test(explicit))) return explicit;
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
   if (vercel) return `https://${vercel}`;
-  return "http://localhost:3000";
+  return explicit || "http://localhost:3000";
 }

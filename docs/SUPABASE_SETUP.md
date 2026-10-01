@@ -41,10 +41,12 @@ The schema lives in `supabase/migrations/` and must be applied in filename order
 | `20260930000400_storage.sql` | private `documents` bucket (10 MB, PDF/JPEG/PNG) and per-user folder policies |
 | `20261001000100_task_routines.sql` | recurring routines: `tasks.kind` + schedule columns, `task_completions` (one row per completed date) with RLS, routine reminders in notifications |
 | `20261001000200_bill_payments.sql` | bill payments ⇄ expenses: `bill_occurrences.outcome` (paid/skipped), `transactions.bill_occurrence_id` (one expense per payment), `mark_bill_occurrence` v2, `money_summary` |
+| `20261002000100_profiles_on_confirmation.sql` | LifeHub profiles are created when the email is confirmed, not at sign-up (adds trigger `on_auth_user_confirmed`) |
 
 All migrations are additive. The two `20261001…` files add columns with defaults or nulls, one
 table, constraints that existing rows already satisfy, and replace RPC functions; they never
-drop or rewrite data. Already-applied projects only need `npx supabase db push`, which applies
+drop or rewrite data. `20261002…` only changes when a profile is created; existing profiles are
+untouched (the app still works if it hasn't been applied yet). Already-applied projects only need `npx supabase db push`, which applies
 the new files and skips the ones already recorded.
 
 > **Order matters:** apply the migrations **before** running or deploying app code from the
@@ -98,7 +100,7 @@ Dashboard → **Authentication**:
    **Confirm signup**
    ```html
    <h2>Confirm your email</h2>
-   <p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/dashboard">Confirm your email address</a></p>
+   <p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/verify-email">Confirm your email address</a></p>
    ```
 
    **Reset password**

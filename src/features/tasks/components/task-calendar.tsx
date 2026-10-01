@@ -2,6 +2,7 @@
 
 import { Check, ChevronLeft, ChevronRight, Plus, Repeat } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { calendarGrid } from "@/lib/calendar";
@@ -70,6 +71,144 @@ function TaskChip({ task, size }: { task: TaskItem; size: "grid" | "agenda" }) {
   );
 }
 
+function describeDay(entries: DayEntry[]): string {
+  const tasks = entries.filter((entry) => entry.type === "task").length;
+  const routines = entries.filter((entry) => entry.type === "routine");
+  const done = routines.filter((entry) => entry.type === "routine" && entry.occurrence.completed).length;
+  const parts = [
+    tasks ? `${tasks} task${tasks === 1 ? "" : "s"}` : null,
+    routines.length ? `${routines.length} routine${routines.length === 1 ? "" : "s"}${done ? `, ${done} done` : ""}` : null,
+  ].filter(Boolean);
+  return parts.length ? parts.join(", ") : "nothing scheduled";
+}
+
+/**
+ * Phone layout: a compact month grid (dots show what's on each day) and the selected day's
+ * tasks and routines below it. Daily routines no longer repeat down the page.
+ */
+function MobileMonth({
+  days,
+  currentMonth,
+  today,
+  byDay,
+  entryKey,
+}: {
+  days: ISODate[];
+  currentMonth: string;
+  today: ISODate;
+  byDay: Map<ISODate, DayEntry[]>;
+  entryKey: (entry: DayEntry) => string;
+}) {
+  const { openCreate } = useTaskEditor();
+  const [selected, setSelected] = useState<ISODate | null>(null);
+  const fallback = monthKey(today) === currentMonth ? today : `${currentMonth}-01`;
+  // A selection from another month (after navigating) falls back to today / the 1st.
+  const activeDay = selected && days.includes(selected) ? selected : fallback;
+  const entries = byDay.get(activeDay) ?? [];
+
+  return (
+    <div className="space-y-4 sm:hidden">
+      <div className="rounded-xl border bg-card p-2">
+        <div className="grid grid-cols-7 text-center text-[11px] font-medium text-muted-foreground" aria-hidden="true">
+          {WEEKDAYS.map((day) => (
+            <span key={day} className="py-1">
+              {day.charAt(0)}
+            </span>
+          ))}
+        </div>
+        <ol className="grid grid-cols-7 gap-y-1">
+          {days.map((day) => {
+            const dayEntries = byDay.get(day) ?? [];
+            const hasTask = dayEntries.some((entry) => entry.type === "task");
+            const routineEntries = dayEntries.filter((entry) => entry.type === "routine");
+            const allRoutinesDone =
+              routineEntries.length > 0 && routineEntries.every((entry) => entry.type === "routine" && entry.occurrence.completed);
+            const isSelected = day === activeDay;
+            const isToday = day === today;
+            const inMonth = monthKey(day) === currentMonth;
+            return (
+              <li key={day} className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setSelected(day)}
+                  aria-pressed={isSelected}
+                  aria-label={`${formatISODate(day, "weekday")}${isToday ? " (today)" : ""}: ${describeDay(dayEntries)}`}
+                  className={cn(
+                    "flex h-11 w-full max-w-11 flex-col items-center justify-center gap-0.5 rounded-lg text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                    isSelected ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+                    !isSelected && isToday && "font-semibold text-primary",
+                    !isSelected && !inMonth && "text-muted-foreground/60",
+                  )}
+                >
+                  <span className="tabular leading-none">{Number(day.slice(8))}</span>
+                  <span className="flex h-1.5 items-center gap-0.5" aria-hidden="true">
+                    {hasTask ? (
+                      <span className={cn("size-1.5 rounded-full", isSelected ? "bg-primary-foreground" : "bg-foreground/60")} />
+                    ) : null}
+                    {routineEntries.length ? (
+                      <span
+                        className={cn(
+                          "size-1.5 rounded-full",
+                          isSelected
+                            ? "border border-primary-foreground"
+                            : allRoutinesDone
+                              ? "bg-primary"
+                              : "border border-primary",
+                          isSelected && allRoutinesDone && "bg-primary-foreground",
+                        )}
+                      />
+                    ) : null}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+        <p className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1 border-t pt-2 text-[11px] text-muted-foreground" aria-hidden="true">
+          <span className="inline-flex items-center gap-1">
+            <span className="size-1.5 rounded-full bg-foreground/60" /> Tasks
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="size-1.5 rounded-full border border-primary" /> Routines
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="size-1.5 rounded-full bg-primary" /> All routines done
+          </span>
+        </p>
+      </div>
+
+      <section aria-live="polite" aria-label={`Selected day, ${formatISODate(activeDay, "weekday")}`}>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h3 className={cn("text-sm font-semibold", activeDay === today ? "text-primary" : "text-foreground")}>
+            {formatISODate(activeDay, "weekday")}
+            {activeDay === today ? " · Today" : ""}
+          </h3>
+          <Button variant="ghost" size="sm" onClick={() => openCreate({ dueDate: activeDay })}>
+            <Plus aria-hidden="true" /> Add task
+          </Button>
+        </div>
+        {entries.length === 0 ? (
+          <p className="rounded-xl border border-dashed bg-card/60 p-5 text-center text-sm text-muted-foreground">
+            Nothing scheduled for this day.
+          </p>
+        ) : (
+          <ul className="space-y-1.5 rounded-xl border bg-card p-1.5">
+            {entries.map((entry) => (
+              <li key={entryKey(entry)}>
+                {entry.type === "task" ? (
+                  <TaskChip task={entry.task} size="agenda" />
+                ) : (
+                  <RoutineChip occurrence={entry.occurrence} today={today} size="agenda" />
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}
+
 export function TaskCalendar({
   month,
   today,
@@ -101,7 +240,6 @@ export function TaskCalendar({
     params.set("month", monthKey(target));
     return `/tasks?${params.toString()}`;
   };
-  const agendaDays = days.filter((day) => monthKey(day) === currentMonth && byDay.has(day));
   const entryKey = (entry: DayEntry) => (entry.type === "task" ? entry.task.id : `${entry.occurrence.routine.id}:${entry.occurrence.date}`);
 
   return (
@@ -129,7 +267,7 @@ export function TaskCalendar({
       {routines.length > 0 ? (
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Repeat className="size-3.5 text-primary" aria-hidden="true" />
-          Routines have a dashed outline. Click one on today or an earlier day to tick it off.
+          Routines have a dashed outline. Select one on today or an earlier day to tick it off.
         </p>
       ) : null}
 
@@ -196,36 +334,9 @@ export function TaskCalendar({
         </ol>
       </div>
 
-      {/* Agenda (phones) */}
-      <div className="sm:hidden">
-        {agendaDays.length === 0 ? (
-          <p className="rounded-xl border border-dashed bg-card/60 p-6 text-center text-sm text-muted-foreground">
-            Nothing scheduled this month.
-          </p>
-        ) : (
-          <ol className="space-y-4">
-            {agendaDays.map((day) => (
-              <li key={day}>
-                <h3 className={cn("mb-1.5 text-xs font-semibold", day === today ? "text-primary" : "text-muted-foreground")}>
-                  {formatISODate(day, "weekday")}
-                  {day === today ? " · Today" : ""}
-                </h3>
-                <ul className="space-y-1.5 rounded-xl border bg-card p-1.5">
-                  {(byDay.get(day) ?? []).map((entry) => (
-                    <li key={entryKey(entry)}>
-                      {entry.type === "task" ? (
-                        <TaskChip task={entry.task} size="agenda" />
-                      ) : (
-                        <RoutineChip occurrence={entry.occurrence} today={today} size="agenda" />
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ol>
-        )}
-      </div>
+      {/* Phones: compact month grid + the selected day's items */}
+      <MobileMonth days={days} currentMonth={currentMonth} today={today} byDay={byDay} entryKey={entryKey} />
+
     </section>
   );
 }

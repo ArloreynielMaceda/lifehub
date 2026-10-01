@@ -9,11 +9,15 @@ import {
   ok,
   validationFailure,
 } from "@/lib/action-result";
+import { STALE_SESSION_MESSAGE, isRecentlyAuthenticated, lastAuthenticatedAt } from "@/lib/auth-recency";
 import { isValidTimeZone } from "@/lib/dates";
 import { safeNextPath } from "@/lib/safe-redirect";
-import { getSiteUrl, isSupabaseConfigured } from "@/lib/supabase/env";
+import { getRequestOrigin } from "@/lib/site-url";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
+import { VERIFY_EMAIL_PATH } from "./paths";
+import { type AuthErrorLike, logRateLimit, rateLimitMessage } from "./rate-limit";
 import {
   emailSchema,
   forgotPasswordSchema,
@@ -23,15 +27,22 @@ import {
 } from "./schemas";
 
 const NOT_CONFIGURED = "LifeHub isn't connected to Supabase yet. See the README to finish setup.";
-const RATE_LIMITED = "Too many attempts. Please wait a minute and try again.";
 
-interface AuthErrorLike {
-  code?: string;
-  status?: number;
+/** Supabase rate limits → a message that says how long to wait; logged with the code. */
+function rateLimited(scope: string, error: AuthErrorLike) {
+  const message = rateLimitMessage(error);
+  if (!message) return null;
+  logRateLimit(scope, error);
+  return fail(message);
 }
 
-function isRateLimited(error: AuthErrorLike): boolean {
-  return error.status === 429 || error.code === "over_request_rate_limit" || error.code === "over_email_send_rate_limit";
+/**
+ * Where links in auth emails point: /auth/confirm on the site the user is using right now
+ * (so a deployed site never links to localhost). Supabase must list this origin under
+ * Authentication → URL Configuration → Redirect URLs, otherwise it falls back to its Site URL.
+ */
+async function authLink(next: string): Promise<string> {
+  return `${await getRequestOrigin()}/auth/confirm?next=${encodeURIComponent(next)}`;
 }
 
 function logAuthError(scope: string, error: AuthErrorLike) {
@@ -54,9 +65,10 @@ export async function signIn(input: unknown): Promise<SignInResult> {
 
   if (error) {
     if (error.code === "email_not_confirmed") {
-      return { ...fail("Please confirm your email first. We can send a new link if you need one."), unverified: true };
+      return { ...fail("Your account isn't active yet. Open the confirmation link we emailed you, or send yourself a new one."), unverified: true };
     }
-    if (isRateLimited(error)) return fail(RATE_LIMITED);
+    const limited = rateLimited("sign-in", error);
+    if (limited) return limited;
     if (error.code === "invalid_credentials" || error.status === 400) {
       return fail("That email and password don't match. Please try again.");
     }
@@ -80,7 +92,7 @@ export async function signUp(
     email,
     password,
     options: {
-      emailRedirectTo: `${getSiteUrl()}/auth/confirm?next=/dashboard`,
+      emailRedirectTo: await authLink(VERIFY_EMAIL_PATH),
       data: {
         full_name: fullName,
         timezone: timezone && isValidTimeZone(timezone) ? timezone : undefined,
@@ -89,7 +101,8 @@ export async function signUp(
   });
 
   if (error) {
-    if (isRateLimited(error)) return fail(RATE_LIMITED);
+    const limited = rateLimited("sign-up", error);
+    if (limited) return limited;
     if (error.code === "weak_password") {
       return fail("Please choose a stronger password.", { password: ["This password is too weak or common"] });
     }
@@ -118,14 +131,26 @@ export async function resendVerification(input: unknown): Promise<ActionResult> 
   const { error } = await supabase.auth.resend({
     type: "signup",
     email: parsed.data,
-    options: { emailRedirectTo: `${getSiteUrl()}/auth/confirm?next=/dashboard` },
+    options: { emailRedirectTo: await authLink(VERIFY_EMAIL_PATH) },
   });
   if (error) {
-    if (isRateLimited(error)) return fail(RATE_LIMITED);
+    const limited = rateLimited("resend", error);
+    if (limited) return limited;
     logAuthError("resend", error);
   }
   // Same response either way so the endpoint can't be used to probe accounts.
   return ok(null, "If that account needs confirming, a new link is on its way.");
+}
+
+/**
+ * Lets the "Confirm your email" screen notice when the link was opened in another tab of the
+ * same browser (which signs the user in there).
+ */
+export async function checkEmailConfirmed(): Promise<boolean> {
+  if (!isSupabaseConfigured()) return false;
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  return Boolean(data?.claims?.sub);
 }
 
 export async function requestPasswordReset(input: unknown): Promise<ActionResult> {
@@ -135,15 +160,21 @@ export async function requestPasswordReset(input: unknown): Promise<ActionResult
 
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${getSiteUrl()}/auth/confirm?next=/reset-password`,
+    redirectTo: await authLink("/reset-password"),
   });
   if (error) {
-    if (isRateLimited(error)) return fail(RATE_LIMITED);
+    const limited = rateLimited("reset-request", error);
+    if (limited) return limited;
     logAuthError("reset-request", error);
   }
   return ok(null, "If an account exists for that email, a reset link is on its way.");
 }
 
+/**
+ * Sets a new password without the old one: only for the session opened by an emailed reset
+ * link, or a sign-in moments ago. An older session (e.g. a device left signed in) must use
+ * Settings → Change password, which asks for the current password.
+ */
 export async function updatePassword(input: unknown): Promise<ActionResult> {
   if (!isSupabaseConfigured()) return fail(NOT_CONFIGURED);
   const parsed = resetPasswordSchema.safeParse(input);
@@ -154,6 +185,7 @@ export async function updatePassword(input: unknown): Promise<ActionResult> {
   if (!data?.claims?.sub) {
     return fail("Your reset link has expired. Please request a new one.");
   }
+  if (!isRecentlyAuthenticated(lastAuthenticatedAt(data.claims))) return fail(STALE_SESSION_MESSAGE);
 
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
   if (error) {
@@ -168,11 +200,21 @@ export async function updatePassword(input: unknown): Promise<ActionResult> {
     if (error.code === "reauthentication_needed") {
       return fail("For security, please sign in again before changing your password.");
     }
-    if (isRateLimited(error)) return fail(RATE_LIMITED);
+    const limited = rateLimited("update-password", error);
+    if (limited) return limited;
     logAuthError("update-password", error);
     return fail(GENERIC_ERROR);
   }
   return ok(null, "Your password has been updated.");
+}
+
+/** From a stale reset page: sign out here so a new reset link can be requested. */
+export async function restartPasswordReset(): Promise<void> {
+  if (isSupabaseConfigured()) {
+    const supabase = await createClient();
+    await supabase.auth.signOut({ scope: "local" });
+  }
+  redirect("/forgot-password");
 }
 
 export async function signOut(): Promise<void> {

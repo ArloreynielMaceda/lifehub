@@ -8,6 +8,8 @@ import { createClient, type ServerSupabaseClient } from "@/lib/supabase/server";
 export interface ActionContext {
   supabase: ServerSupabaseClient;
   userId: string;
+  /** From the verified JWT; used to re-check the password before sensitive changes. */
+  email: string | null;
 }
 
 /**
@@ -19,7 +21,8 @@ export async function getActionContext(): Promise<ActionContext | null> {
   const { data, error } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
   if (error || !userId) return null;
-  return { supabase, userId };
+  const email = data?.claims?.email;
+  return { supabase, userId, email: typeof email === "string" ? email : null };
 }
 
 /** The caller's current date in their own time zone (from their profile). */

@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import { FormAlert, SubmitButton } from "@/components/shared/form-bits";
+import { FormAlert, PasswordInput, SubmitButton } from "@/components/shared/form-bits";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -162,6 +162,7 @@ export function PreferencesForm({
 export function DeleteAccountSection() {
   const [open, setOpen] = useState(false);
   const [confirmation, setConfirmation] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -172,6 +173,7 @@ export function DeleteAccountSection() {
         if (pending) return;
         setOpen(next);
         setConfirmation("");
+        setPassword("");
         setError(null);
       }}
     >
@@ -191,13 +193,22 @@ export function DeleteAccountSection() {
             event.preventDefault();
             setError(null);
             startTransition(async () => {
-              const result = await deleteAccount({ confirmation });
+              const result = await deleteAccount({ confirmation, password });
               if (result && !result.ok) setError(result.error);
             });
           }}
           className="space-y-4"
         >
           <FormAlert message={error} />
+          <Field>
+            <FieldLabel htmlFor="delete-password">Your password</FieldLabel>
+            <PasswordInput
+              id="delete-password"
+              value={password}
+              autoComplete="current-password"
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          </Field>
           <Field>
             <FieldLabel htmlFor="delete-confirmation">
               Type <span className="font-mono font-semibold">DELETE</span> to confirm
@@ -213,7 +224,12 @@ export function DeleteAccountSection() {
             <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
               Cancel
             </Button>
-            <SubmitButton pending={pending} pendingLabel="Deleting…" variant="destructive" disabled={confirmation !== "DELETE"}>
+            <SubmitButton
+              pending={pending}
+              pendingLabel="Deleting…"
+              variant="destructive"
+              disabled={confirmation !== "DELETE" || !password}
+            >
               Permanently delete
             </SubmitButton>
           </DialogFooter>

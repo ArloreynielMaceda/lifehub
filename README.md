@@ -24,7 +24,7 @@ shadcn/ui and Supabase (Postgres, Auth, Storage).
 
 | Area | What you get |
 | --- | --- |
-| **Auth** | Email/password sign-up with email verification, sign in/out, forgot & reset password, protected routes, profile & account settings, account deletion. |
+| **Auth** | Email/password sign-up that stays inactive until the email is confirmed ("Confirm your email" → "Email confirmed" pages, resend with cooldown), sign in/out, sign out of all devices, forgot & reset password, protected routes, profile & account settings. Changing the password or deleting the account asks for the current password. |
 | **Dashboard** | Greeting and date in your time zone, tasks due today/overdue (tick them off inline), this week's strip, upcoming bills and reminders (mark paid inline), this month's income/expenses/net, recent transactions, quick-add actions. Empty states for new users — no fake numbers. |
 | **Tasks** | Create/edit/complete/delete; title, notes, due date, priority, status (pending / in progress / completed), category; search, filter, sort; Open/Today/Overdue/Upcoming/Completed views; list and month calendar views; optimistic completion with undo. |
 | **Routines** | Recurring routines ("Take vitamins", "Exercise Mon/Wed/Fri"): every day, weekdays, weekends or chosen days; start and optional end date; optional reminder time; tick off today (or an earlier day) without re-creating anything; 7-day completion history; pause, resume, edit, delete; shown in "Today's routines", the Routines tab, the calendar and the dashboard. |
@@ -159,7 +159,10 @@ Full guide: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 | --- | --- |
 | Private pages show **"Connect Supabase to continue"** | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are missing. Add them to `.env.local` and restart `npm run dev` (on Vercel: add them and redeploy — `NEXT_PUBLIC_*` values are baked in at build time). |
 | Sign-up works but the email link says **"invalid or has expired"** | Add your URL to Supabase **Redirect URLs**; make sure `NEXT_PUBLIC_SITE_URL` matches where the app runs; with default templates, open the link in the same browser, or switch to the `token_hash` templates. Links are single-use. |
-| **"Please confirm your email first"** | Click the confirmation link or use **Resend confirmation email** on the sign-in page. |
+| Confirmation / password-reset emails open **localhost:3000** on the deployed site | Supabase only sends people to URLs on its allow-list and otherwise falls back to its **Site URL**. In Supabase → Authentication → URL Configuration set **Site URL** to your production address and add `https://<your-domain>/**` to **Redirect URLs**. The app builds email links from the address you're using, so no rebuild is needed. Old emails keep their old link; request a new one. |
+| **"Your account isn't active yet"** | The email hasn't been confirmed. Click the confirmation link or use **Resend confirmation email** on the sign-in page. |
+| Confirmation link says **"Email confirmed — sign in to continue"** | The link was opened in a different browser or app from the one used to sign up. The account is active; just sign in. |
+| Reset page says **"Use a fresh link"** | A password can only be set without the old one within 15 minutes of opening a reset link. Request a new link, or change it in Settings with your current password. |
 | No confirmation email arrives | The built-in Supabase sender is rate-limited (a few emails per hour). Configure custom SMTP. Check spam. |
 | You land on **"Your database needs an update"** (`/update-required`), or logs show `column … does not exist` / `[schema]` errors | The app code is newer than the database. Run `npx supabase db push` (preview first with `--dry-run`), then reload. The page turns into "Your database is up to date" once all migrations are applied. |
 | Uploads fail with **"Uploads are unavailable"** | The `documents` bucket or its policies are missing — apply `20260930000400_storage.sql`. |

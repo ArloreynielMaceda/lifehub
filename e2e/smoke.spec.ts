@@ -50,6 +50,16 @@ test("auth forms have labelled fields and client-side validation", async ({ page
   await expect(page.getByText("Enter your email address")).toBeVisible();
 });
 
+test("expired confirmation links explain what to do", async ({ page }) => {
+  await page.goto("/verify-email?status=expired");
+  // Without Supabase configured the page sends visitors to sign in instead.
+  if (page.url().includes("/login")) return;
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("This link has expired");
+  await page.getByRole("button", { name: "Send a new link" }).click();
+  await expect(page.getByText("Enter your email address")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/login");
+});
+
 test("private pages are never shown to signed-out visitors", async ({ page }) => {
   for (const path of ["/dashboard", "/tasks", "/expenses", "/documents", "/settings"]) {
     await page.goto(path);

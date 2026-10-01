@@ -53,7 +53,9 @@ function putWithProgress(url: string, file: File, onProgress: (percent: number) 
     xhr.onerror = () => reject(new Error("network"));
     xhr.onabort = () => reject(new Error("aborted"));
     const body = new FormData();
-    body.append("cacheControl", "3600");
+    // max-age=0: private documents shouldn't be reused from browser or CDN caches after their
+    // 60-second signed link expires (Supabase's default would keep them for an hour).
+    body.append("cacheControl", "0");
     body.append("", file);
     xhr.send(body);
   });

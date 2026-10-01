@@ -21,9 +21,13 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
     ? { tone: "error" as const, message: ERROR_MESSAGES.not_configured! }
     : error && ERROR_MESSAGES[error]
       ? { tone: "error" as const, message: ERROR_MESSAGES[error]! }
-      : one(params.signed_out)
-        ? { tone: "success" as const, message: "You've been signed out." }
-        : undefined;
+      : one(params.signed_out) === "everywhere"
+        ? { tone: "success" as const, message: "You've been signed out on all your devices." }
+        : one(params.signed_out)
+          ? { tone: "success" as const, message: "You've been signed out." }
+          : one(params.password_changed)
+            ? { tone: "success" as const, message: "Your password was changed. Please sign in with the new one." }
+            : undefined;
 
   return (
     <div className="space-y-8">

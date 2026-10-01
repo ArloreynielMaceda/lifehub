@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 
 import { PageHeader } from "@/components/shared/page-header";
-import { ResetPasswordForm } from "@/features/auth/components/reset-password-form";
+import { Button } from "@/components/ui/button";
+import { signOutEverywhere } from "@/features/settings/actions";
+import { ChangePasswordForm } from "@/features/settings/components/change-password-form";
 import {
   DeleteAccountSection,
   PreferencesForm,
@@ -64,8 +66,23 @@ export default async function SettingsPage() {
         </Section>
         <Section id="security" title="Password" description="Choose a strong password you don't use anywhere else.">
           <div className="sm:max-w-md">
-            <ResetPasswordForm submitLabel="Change password" redirectTo={null} />
+            <ChangePasswordForm />
           </div>
+        </Section>
+        <Section
+          id="sessions"
+          title="Signed-in devices"
+          description="Lost a phone or used a shared computer? Sign out everywhere at once."
+        >
+          <form action={signOutEverywhere} className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              This ends every LifeHub session for your account, including this one. You&apos;ll need your
+              password to sign in again.
+            </p>
+            <Button type="submit" variant="outline">
+              Sign out of all devices
+            </Button>
+          </form>
         </Section>
         <Section
           id="danger"

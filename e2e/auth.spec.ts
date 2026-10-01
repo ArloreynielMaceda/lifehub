@@ -10,7 +10,7 @@ test.describe("authentication", () => {
     for (const id of created) await deleteUser(id);
   });
 
-  test("sign up shows the verification step, and the emailed link activates the account", async ({ page }) => {
+  test("sign up stays inactive until the emailed link confirms it", async ({ page }) => {
     const email = uniqueEmail("signup");
     await page.goto("/signup");
     await page.getByLabel("Your name").fill("Maria Clara");
@@ -19,9 +19,9 @@ test.describe("authentication", () => {
     await page.getByLabel("Confirm password").fill(PASSWORD);
     await page.getByRole("button", { name: "Create account" }).click();
 
-    // With email confirmation enabled (recommended) the form switches to "Check your inbox".
+    // With email confirmation enabled (recommended) the form switches to "Confirm your email".
     // If confirmation is disabled in the project, the user lands on the dashboard directly.
-    await expect(page.getByRole("heading", { name: "Check your inbox" }).or(page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ }))).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Confirm your email" }).or(page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ }))).toBeVisible();
 
     const { data: users } = await admin().auth.admin.listUsers({ perPage: 200 });
     const user = users.users.find((u) => u.email === email);
@@ -30,12 +30,24 @@ test.describe("authentication", () => {
 
     if (page.url().includes("/dashboard")) return;
 
+    // Pending: the account can't sign in yet and has no LifeHub data.
+    await expect(page.getByRole("list", { name: "Sign-up progress" })).toBeVisible();
+    const { data: pendingProfile } = await admin().from("profiles").select("id").eq("id", user!.id).maybeSingle();
+    expect(pendingProfile).toBeNull();
+
     // Simulate clicking the confirmation email: generate the same token server-side.
     const { data: link, error } = await admin().auth.admin.generateLink({ type: "signup", email, password: PASSWORD });
     expect(error).toBeNull();
     const tokenHash = link?.properties?.hashed_token;
     expect(tokenHash).toBeTruthy();
-    await page.goto(`/auth/confirm?token_hash=${tokenHash}&type=signup&next=/dashboard`);
+    await page.goto(`/auth/confirm?token_hash=${tokenHash}&type=email&next=/verify-email`);
+    await expect(page).toHaveURL(/\/verify-email$/);
+    await expect(page.getByRole("heading", { name: "Email confirmed" })).toBeVisible();
+    await expect(page.getByText("Welcome to LifeHub, Maria")).toBeVisible();
+    const { data: profile } = await admin().from("profiles").select("full_name").eq("id", user!.id).maybeSingle();
+    expect(profile?.full_name).toBe("Maria Clara");
+
+    await page.getByRole("link", { name: "Go to my dashboard" }).click();
     await expect(page).toHaveURL(/\/dashboard/);
     await expect(page.getByRole("heading", { name: /Maria/ })).toBeVisible();
   });
@@ -94,6 +106,11 @@ test.describe("authentication", () => {
 
   test("invalid or reused confirmation links are rejected safely", async ({ page }) => {
     await page.goto("/auth/confirm?token_hash=not-a-real-token&type=signup&next=https://evil.example");
+    await expect(page).toHaveURL(/\/verify-email\?status=expired/);
+    await expect(page.getByRole("heading", { name: "This link has expired" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Send a new link" })).toBeVisible();
+
+    await page.goto("/auth/confirm?token_hash=not-a-real-token&type=recovery");
     await expect(page).toHaveURL(/\/login\?error=link_invalid/);
     await expect(page.getByRole("alert")).toContainText("invalid or has expired");
   });

@@ -3,6 +3,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
+import { lastAuthenticatedAt } from "@/lib/auth-recency";
 import { todayInTimeZone, type ISODate } from "@/lib/dates";
 import { DEFAULT_CURRENCY } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
@@ -11,6 +12,8 @@ import type { Profile } from "@/types/database";
 export interface SessionUser {
   id: string;
   email: string | null;
+  /** When this session last proved who the user is (Unix seconds), see auth-recency. */
+  authenticatedAt: number | null;
 }
 
 /**
@@ -22,7 +25,11 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   const { data, error } = await supabase.auth.getClaims();
   const claims = data?.claims;
   if (error || !claims?.sub) return null;
-  return { id: claims.sub, email: typeof claims.email === "string" ? claims.email : null };
+  return {
+    id: claims.sub,
+    email: typeof claims.email === "string" ? claims.email : null,
+    authenticatedAt: lastAuthenticatedAt(claims),
+  };
 });
 
 export async function requireUser(): Promise<SessionUser> {
