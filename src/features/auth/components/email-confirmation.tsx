@@ -1,8 +1,8 @@
-import { ArrowRight, BadgeCheck, TimerOff } from "lucide-react";
+import { ArrowRight, TimerOff } from "lucide-react";
 import Link from "next/link";
 
+import { Companion } from "@/components/companion/companion";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 import { ResendVerificationForm } from "./resend-verification";
 import { SignupSteps } from "./signup-steps";
@@ -10,23 +10,24 @@ import { SignupSteps } from "./signup-steps";
 function StatusHeader({
   tone,
   title,
+  celebrate = false,
   children,
 }: {
   tone: "success" | "warning";
   title: string;
+  /** The first moment of a new account: the companion welcomes them. */
+  celebrate?: boolean;
   children: React.ReactNode;
 }) {
-  const Icon = tone === "success" ? BadgeCheck : TimerOff;
   return (
     <div className="space-y-4">
-      <div
-        className={cn(
-          "flex size-11 items-center justify-center rounded-xl",
-          tone === "success" ? "bg-success-soft text-success" : "bg-warning-soft text-warning",
-        )}
-      >
-        <Icon className="size-5" aria-hidden="true" />
-      </div>
+      {tone === "success" ? (
+        <Companion mood="happy" badge="check" sparkles={celebrate} size="md" className="lg:hidden" />
+      ) : (
+        <div className="flex size-11 items-center justify-center rounded-xl bg-warning-soft text-warning">
+          <TimerOff className="size-5" aria-hidden="true" />
+        </div>
+      )}
       <div className="space-y-2">
         <h1 className="font-display text-4xl">{title}</h1>
         <p className="text-sm text-muted-foreground">{children}</p>
@@ -39,7 +40,7 @@ function StatusHeader({
 export function EmailConfirmed({ name, email }: { name: string; email: string | null }) {
   return (
     <div className="space-y-6">
-      <StatusHeader tone="success" title="Email confirmed">
+      <StatusHeader tone="success" title="Email confirmed" celebrate>
         Welcome to LifeHub, {name}. Your account is now active and you&apos;re signed in.
       </StatusHeader>
       <SignupSteps current={3} />

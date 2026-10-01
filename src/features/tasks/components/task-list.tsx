@@ -4,6 +4,7 @@ import { CircleDot, MoreHorizontal, Pencil, RotateCcw, Trash2 } from "lucide-rea
 import { useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { Companion } from "@/components/companion/companion";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { DueLabel } from "@/components/shared/due-label";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +43,8 @@ export function TaskRow({ task, today }: { task: TaskItem; today: ISODate }) {
       }
       if (next === "completed") {
         toast.success("Task completed", {
+          icon: <Companion mood="wink" size="xs" />,
+          classNames: { icon: "size-7! mr-1!" },
           action: { label: "Undo", onClick: () => void setTaskStatus(task.id, previous) },
         });
       }

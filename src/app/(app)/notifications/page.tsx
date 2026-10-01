@@ -46,6 +46,7 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/no
         {items.length === 0 ? (
           <EmptyState
             icon={<BellOff />}
+            companion={filter === "unread" ? { mood: "wink", badge: "check" } : { mood: "calm", badge: "bell" }}
             title={filter === "unread" ? "No unread notifications" : "No notifications yet"}
             description="When a task, bill or reminder is due soon, due today or overdue, you'll see it here."
           />

@@ -87,6 +87,7 @@ export default async function NotesPage({ searchParams }: PageProps<"/notes">) {
           ) : (
             <EmptyState
               icon={<NotebookPen />}
+              illustration="planning"
               title="No notes yet"
               description="Capture a grocery list, meeting notes or an idea. Notes save automatically as you type."
               action={

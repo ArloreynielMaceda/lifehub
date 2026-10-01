@@ -1,6 +1,7 @@
 import { CalendarClock, CircleAlert, CircleCheck, History, SearchX } from "lucide-react";
 import type { Metadata } from "next";
 
+import { CompanionBanner, CompanionNote } from "@/components/companion/companion";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination, parsePage } from "@/components/shared/pagination";
@@ -10,7 +11,8 @@ import { BillEditorProvider, NewBillButton } from "@/features/bills/components/b
 import { BillHistory } from "@/features/bills/components/bill-history";
 import { BillList } from "@/features/bills/components/bill-list";
 import { BillToolbar } from "@/features/bills/components/bill-toolbar";
-import { getBillOverview, listBillHistory, listBills } from "@/features/bills/queries";
+import { billNudge } from "@/features/bills/nudge";
+import { getBillOverview, getNextDue, listBillHistory, listBills } from "@/features/bills/queries";
 import { parseBillFilters } from "@/features/bills/schemas";
 import { getUserContext } from "@/lib/auth";
 import { formatMoney } from "@/lib/money";
@@ -28,7 +30,8 @@ export default async function BillsPage({ searchParams }: PageProps<"/bills">) {
   const filters = parseBillFilters(raw);
   const page = parsePage(raw.page);
   const { today, currency, timezone } = await getUserContext();
-  const overview = await getBillOverview(today);
+  const [overview, nextDue] = await Promise.all([getBillOverview(today), getNextDue()]);
+  const nudge = billNudge(nextDue, today, overview.overdueCount);
   const hasFilters = Boolean(filters.q || filters.kind);
 
   const overdueTotals = overview.byCurrency
@@ -61,10 +64,16 @@ export default async function BillsPage({ searchParams }: PageProps<"/bills">) {
         hasFilters ? (
           <EmptyState icon={<SearchX />} title="Nothing matches your filters" description="Try another search or type." />
         ) : filters.view === "overdue" ? (
-          <EmptyState icon={<CircleCheck />} title="Nothing overdue" description="Every bill and reminder is on track." />
+          <EmptyState
+            icon={<CircleCheck />}
+            companion={nudge ? undefined : { mood: "wink", badge: "check" }}
+            title="Nothing overdue"
+            description="Every bill and reminder is on track."
+          />
         ) : (
           <EmptyState
             icon={<CalendarClock />}
+            companion={nudge ? undefined : { mood: "calm", badge: "bell" }}
             title={filters.view === "upcoming" ? "Nothing coming up" : "No bills or reminders yet"}
             description="Add rent, utilities, subscriptions or any date you don't want to miss. Repeating items roll forward automatically when you mark them done."
             action={
@@ -93,6 +102,21 @@ export default async function BillsPage({ searchParams }: PageProps<"/bills">) {
         }
       />
       <div className="space-y-6">
+        {nudge?.urgent ? (
+          <CompanionBanner
+            pose="reminder"
+            mood={nudge.mood}
+            badge="bell"
+            title={nudge.tone === "warning" ? "Overdue" : "Reminder"}
+            tone={nudge.tone}
+          >
+            {nudge.text}
+          </CompanionBanner>
+        ) : nudge ? (
+          <CompanionNote mood={nudge.mood} badge="bell" tone={nudge.tone}>
+            {nudge.text}
+          </CompanionNote>
+        ) : null}
         <section aria-label="Summary" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <StatTile
             label="Overdue"

@@ -1,9 +1,11 @@
 "use client";
 
 import { Bell, MoreHorizontal, Pause, Pencil, Play, Repeat, Trash2 } from "lucide-react";
-import { useOptimistic, useState, useTransition } from "react";
+import { useOptimistic, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { useCelebration } from "@/components/companion/celebration";
+import { Companion } from "@/components/companion/companion";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,18 +25,36 @@ import { deleteTask, setRoutineCompletion, setRoutinePaused } from "../actions";
 import type { RoutineView } from "../queries";
 import { useTaskEditor } from "./task-editor";
 
-/** Optimistic done/not-done toggle for one routine on one date. */
+/**
+ * Optimistic done/not-done toggle for one routine on one date. Ticking it off celebrates:
+ * a congratulation badge pops from the control (attach `controlRef`, render `celebrations`)
+ * and a short toast confirms it once saved.
+ */
 export function useRoutineCompletion(routine: { id: string; title: string }, date: ISODate, completed: boolean) {
   const [done, setDone] = useOptimistic(completed);
   const [pending, startTransition] = useTransition();
-  const toggle = () =>
+  const controlRef = useRef<HTMLButtonElement>(null);
+  const { celebrate, celebrations } = useCelebration();
+  const toggle = () => {
+    const next = !done;
+    if (next) celebrate(controlRef.current);
     startTransition(async () => {
-      const next = !done;
       setDone(next);
       const result = await setRoutineCompletion(routine.id, date, next);
-      if (!result.ok) toast.error(result.error);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      if (next) {
+        toast.success(`“${routine.title}” done. Nice work!`, {
+          icon: <Companion mood="happy" size="xs" />,
+          classNames: { icon: "size-7! mr-1!" },
+          duration: 2500,
+        });
+      }
     });
-  return { done, toggle, pending };
+  };
+  return { done, toggle, pending, controlRef, celebrations };
 }
 
 function HistoryStrip({ history, today }: { history: HistoryDay[]; today: ISODate }) {
@@ -89,7 +109,7 @@ function RoutineStatus({ routine, today, done }: { routine: RoutineView; today: 
 
 export function RoutineRow({ routine, today }: { routine: RoutineView; today: ISODate }) {
   const { openEdit } = useTaskEditor();
-  const { done, toggle } = useRoutineCompletion(routine, today, routine.completedToday);
+  const { done, toggle, controlRef, celebrations } = useRoutineCompletion(routine, today, routine.completedToday);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [, startTransition] = useTransition();
   const canCompleteToday = routine.scheduledToday && !routine.paused;
@@ -103,8 +123,10 @@ export function RoutineRow({ routine, today }: { routine: RoutineView; today: IS
 
   return (
     <li className={cn("flex items-start gap-3 px-4 py-3.5 sm:px-5", routine.paused && "bg-muted/30")}>
+      {celebrations}
       {canCompleteToday ? (
         <Checkbox
+          ref={controlRef}
           checked={done}
           onCheckedChange={toggle}
           aria-label={done ? `Mark "${routine.title}" not done today` : `Mark "${routine.title}" done today`}
@@ -216,10 +238,12 @@ export function RoutineList({ routines, today }: { routines: RoutineView[]; toda
 }
 
 function TodayRoutineItem({ routine, today }: { routine: RoutineView; today: ISODate }) {
-  const { done, toggle } = useRoutineCompletion(routine, today, routine.completedToday);
+  const { done, toggle, controlRef, celebrations } = useRoutineCompletion(routine, today, routine.completedToday);
   return (
     <li className="flex items-center gap-3 py-2">
+      {celebrations}
       <Checkbox
+        ref={controlRef}
         checked={done}
         onCheckedChange={toggle}
         aria-label={done ? `Mark "${routine.title}" not done today` : `Mark "${routine.title}" done today`}
@@ -258,9 +282,16 @@ export function TodayRoutines({
           <Repeat className="size-4 text-primary" aria-hidden="true" />
           Today&apos;s routines
         </h2>
-        <span className="tabular text-xs text-muted-foreground">
-          {doneCount} of {due.length} done
-        </span>
+        {doneCount === due.length ? (
+          <span className="inline-flex shrink-0 items-center gap-2 text-xs font-medium whitespace-nowrap text-success">
+            <Companion mood="happy" size="xs" sparkles />
+            All done
+          </span>
+        ) : (
+          <span className="tabular text-xs text-muted-foreground">
+            {doneCount} of {due.length} done
+          </span>
+        )}
       </div>
       <ul role="list" className="mt-1 divide-y">
         {due.map((routine) => (

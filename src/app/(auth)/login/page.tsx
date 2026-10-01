@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { Companion } from "@/components/companion/companion";
 import { LoginForm } from "@/features/auth/components/login-form";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -32,6 +33,8 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
+        {/* On desktop the side panel's companion greets instead. */}
+        <Companion mood="happy" size="md" className="mb-3 lg:hidden" />
         <h1 className="font-display text-4xl">Welcome back</h1>
         <p className="text-sm text-muted-foreground">Sign in to pick up where you left off.</p>
       </div>

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 
+import { Companion } from "@/components/companion/companion";
 import {
   FormAlert,
   PasswordInput,
@@ -187,6 +188,7 @@ export function SignupForm({ configured }: { configured: boolean }) {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
+        <Companion mood="welcome" size="md" className="mb-3 lg:hidden" />
         <h1 className="font-display text-4xl">Create your account</h1>
         <p className="text-sm text-muted-foreground">
           Free to start. Your data stays private to you.

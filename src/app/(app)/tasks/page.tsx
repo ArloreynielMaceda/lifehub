@@ -1,6 +1,7 @@
 import { ListChecks, Repeat, SearchX } from "lucide-react";
 import type { Metadata } from "next";
 
+import type { CompanionBadge, CompanionMood } from "@/components/companion/companion";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination, parsePage } from "@/components/shared/pagination";
@@ -25,16 +26,32 @@ import { flattenSearchParams } from "@/lib/validation";
 
 export const metadata: Metadata = { title: "Tasks" };
 
-const EMPTY_COPY: Record<TaskScope, { title: string; description: string }> = {
-  open: { title: "No open tasks", description: "Add what's on your mind and give it a due date so it shows up on your dashboard." },
-  today: { title: "Nothing due today", description: "Enjoy the breathing room, or plan something for today." },
-  overdue: { title: "Nothing overdue", description: "You're on top of things." },
+const EMPTY_COPY: Record<
+  TaskScope,
+  { title: string; description: string; companion?: { mood: CompanionMood; badge?: CompanionBadge; sparkles?: boolean } }
+> = {
+  open: {
+    title: "No open tasks",
+    description: "Add what's on your mind and give it a due date so it shows up on your dashboard.",
+    companion: { mood: "welcome" },
+  },
+  today: {
+    title: "Nothing due today",
+    description: "Enjoy the breathing room, or plan something for today.",
+    companion: { mood: "happy", badge: "check" },
+  },
+  overdue: {
+    title: "Nothing overdue",
+    description: "You're on top of things.",
+    companion: { mood: "wink", badge: "check", sparkles: true },
+  },
   upcoming: { title: "Nothing scheduled ahead", description: "Tasks with a future due date will appear here." },
   completed: { title: "No completed tasks yet", description: "Tick off a task and it will move here." },
-  all: { title: "No tasks yet", description: "Create your first task to get started." },
+  all: { title: "No tasks yet", description: "Create your first task to get started.", companion: { mood: "welcome" } },
   routines: {
     title: "No routines yet",
     description: "Add things you do regularly — take vitamins, exercise, read — and tick them off each day without re-creating them.",
+    companion: { mood: "calm", badge: "check" },
   },
 };
 
@@ -74,6 +91,7 @@ export default async function TasksPage({ searchParams }: PageProps<"/tasks">) {
         ) : (
           <EmptyState
             icon={<Repeat />}
+            companion={EMPTY_COPY.routines.companion}
             title={EMPTY_COPY.routines.title}
             description={EMPTY_COPY.routines.description}
             action={<NewTaskButton kind="routine" label="Add a routine" />}
@@ -99,6 +117,7 @@ export default async function TasksPage({ searchParams }: PageProps<"/tasks">) {
           ) : (
             <EmptyState
               icon={<ListChecks />}
+              companion={copy.companion}
               title={copy.title}
               description={copy.description}
               action={filters.scope !== "completed" ? <NewTaskButton label="Add a task" /> : undefined}

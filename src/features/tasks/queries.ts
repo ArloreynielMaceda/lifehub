@@ -140,6 +140,19 @@ export async function getTaskCounts(today: ISODate) {
   };
 }
 
+/** Tasks due today that are already done (dashboard: "everything for today is done"). */
+export async function getTasksDoneToday(today: ISODate): Promise<number> {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("tasks")
+    .select("id", { count: "exact", head: true })
+    .eq("kind", "task")
+    .eq("status", "completed")
+    .eq("due_date", today);
+  reportQueryError("tasks:done-today", error);
+  return count ?? 0;
+}
+
 /** Distinct categories the user has used (for filters and suggestions). */
 export async function getTaskCategories(): Promise<string[]> {
   const supabase = await createClient();

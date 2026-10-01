@@ -68,10 +68,10 @@ export function buildReminderDigest(
     "",
     "You can turn these emails off in Settings.",
   ].join("\n");
-  const html = `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.5;color:#1b1f1d">
+  const html = `<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.5;color:#14151f">
 <p>${escapeHtml(greeting)}</p><p>Here's what's due in LifeHub:</p>
-<ul>${items.map((item) => `<li><strong>${escapeHtml(item.title)}</strong> <span style="color:#5f6360">(${escapeHtml(item.body)})</span></li>`).join("")}</ul>
-<p><a href="${escapeHtml(siteUrl)}/dashboard" style="color:#1d6746">Open LifeHub</a></p>
-<p style="color:#5f6360;font-size:13px">You can turn these emails off in Settings.</p></div>`;
+<ul>${items.map((item) => `<li><strong>${escapeHtml(item.title)}</strong> <span style="color:#61626f">(${escapeHtml(item.body)})</span></li>`).join("")}</ul>
+<p><a href="${escapeHtml(siteUrl)}/dashboard" style="color:#5753d2">Open LifeHub</a></p>
+<p style="color:#61626f;font-size:13px">You can turn these emails off in Settings.</p></div>`;
   return { subject, text, html };
 }

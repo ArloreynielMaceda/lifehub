@@ -1,6 +1,7 @@
 import { SearchX, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 
+import { CompanionBanner } from "@/components/companion/companion";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination, parsePage } from "@/components/shared/pagination";
@@ -13,6 +14,7 @@ import {
 } from "@/features/transactions/components/transaction-editor";
 import { TransactionFilters } from "@/features/transactions/components/transaction-filters";
 import { TransactionTable } from "@/features/transactions/components/transaction-table";
+import { moneyInsight } from "@/features/transactions/insight";
 import {
   getExpenseBreakdown,
   getMoneyOverview,
@@ -42,6 +44,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/expense
     listTransactions(filters, range, page),
   ]);
   const hasFilters = Boolean(filters.q || filters.type || filters.category);
+  const insight = moneyInsight(money.primary, money.showsPlanned);
   const rangeText =
     range.preset === "custom" || range.preset === "last_3_months" || range.preset === "this_year"
       ? `${formatISODate(range.from, "medium")} – ${formatISODate(range.to, "medium")}`
@@ -61,6 +64,11 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/expense
           <h2 id="totals-heading" className="text-[0.95rem] font-semibold">
             {range.label} <span className="font-normal text-muted-foreground">· {rangeText}</span>
           </h2>
+          {insight ? (
+            <CompanionBanner pose="finance" mood="thinking" badge="chart" title="Insight" tone={insight.tone}>
+              {insight.text}
+            </CompanionBanner>
+          ) : null}
           <MoneyOverviewPanel result={money} periodEnd={range.to} />
         </section>
 
@@ -79,6 +87,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/expense
             ) : (
               <EmptyState
                 icon={<Wallet />}
+                companion={insight ? undefined : { mood: "thinking", badge: "chart" }}
                 title="No transactions in this period"
                 description="Log what you spend and earn to see totals and trends. It takes a few seconds per entry."
                 action={<NewTransactionButton label="Log your first transaction" />}

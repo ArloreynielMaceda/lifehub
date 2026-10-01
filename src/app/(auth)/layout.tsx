@@ -1,6 +1,7 @@
 import { CalendarCheck2, FileLock2, Wallet } from "lucide-react";
 import Link from "next/link";
 
+import { CompanionFigure } from "@/components/companion/companion";
 import { Logo } from "@/components/shared/logo";
 
 const POINTS = [
@@ -24,8 +25,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <Link href="/contact" className="hover:text-foreground">Contact</Link>
         </footer>
       </div>
-      <aside className="relative hidden overflow-hidden border-l bg-canvas lg:flex lg:flex-col lg:justify-center lg:px-16">
-        <div className="max-w-md space-y-10">
+      <aside className="relative hidden overflow-hidden border-l bg-canvas lg:flex lg:flex-col lg:px-16">
+        <div className="my-auto max-w-md space-y-10 pt-14">
           <p className="font-display text-[2.75rem] leading-[1.05] text-foreground">
             A calmer way to keep <em className="text-primary">everyday life</em> in order.
           </p>
@@ -42,6 +43,17 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               </li>
             ))}
           </ul>
+        </div>
+        {/* The companion waves from the bottom of the panel (desktop only; on phones the form
+            pages show a small face instead). */}
+        <div aria-hidden="true" className="flex items-end justify-end gap-3 pt-8">
+          <p className="mb-28 max-w-[15rem] rounded-2xl rounded-br-md border bg-card px-4 py-3 text-sm text-foreground/80 shadow-xs">
+            Hi there! I&apos;ll keep what matters today in view, so nothing slips.
+          </p>
+          <div className="relative flex items-end">
+            <span className="absolute inset-0 bg-companion-glow" />
+            <CompanionFigure pose="welcome" eager className="relative h-56 xl:h-64" />
+          </div>
         </div>
       </aside>
     </div>

@@ -60,6 +60,7 @@ export default async function DocumentsPage({ searchParams }: PageProps<"/docume
             ) : (
               <EmptyState
                 icon={<FolderLock />}
+                illustration="documents"
                 title="Your vault is empty"
                 description="Upload scans of your ID, insurance card, receipts or warranties so they're there when you need them."
               />

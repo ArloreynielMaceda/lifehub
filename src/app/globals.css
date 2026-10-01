@@ -60,53 +60,59 @@
 }
 
 /*
- * LifeHub palette: warm paper neutrals with a single restrained forest-green accent.
- * Status colours are muted and always paired with text labels, never colour alone.
+ * LifeHub palette: clean, cool-neutral surfaces with a single indigo accent (matching the
+ * LifeHub companion's jacket). Status colours are muted and always paired with text labels,
+ * never colour alone: green = paid/done, amber = due/warning, red = overdue/destructive,
+ * teal = reminders/info (kept well apart from the indigo accent).
+ * Contrast (WCAG): text on primary 5.6:1, primary text 5.7:1, muted text >= 5.2:1 on every surface.
  */
 :root {
-  --background: oklch(0.985 0.003 95);
-  --canvas: oklch(0.967 0.004 95);
-  --foreground: oklch(0.2 0.008 155);
+  --background: oklch(0.988 0.002 286);
+  --canvas: oklch(0.972 0.005 286);
+  --foreground: oklch(0.2 0.02 282);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.008 155);
+  --card-foreground: oklch(0.2 0.02 282);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.008 155);
-  --primary: oklch(0.46 0.09 160);
-  --primary-foreground: oklch(0.985 0.008 160);
-  --secondary: oklch(0.955 0.004 95);
-  --secondary-foreground: oklch(0.24 0.008 155);
-  --muted: oklch(0.955 0.004 95);
-  --muted-foreground: oklch(0.47 0.01 155);
-  --accent: oklch(0.955 0.022 160);
-  --accent-foreground: oklch(0.33 0.07 160);
+  --popover-foreground: oklch(0.2 0.02 282);
+  --primary: oklch(0.52 0.19 279);
+  --primary-foreground: oklch(0.985 0.006 285);
+  --secondary: oklch(0.962 0.006 286);
+  --secondary-foreground: oklch(0.24 0.02 282);
+  --muted: oklch(0.962 0.006 286);
+  --muted-foreground: oklch(0.5 0.02 282);
+  --accent: oklch(0.957 0.022 285);
+  --accent-foreground: oklch(0.42 0.16 280);
   --destructive: oklch(0.53 0.19 27);
   --destructive-soft: oklch(0.96 0.025 27);
   --warning: oklch(0.52 0.11 65);
   --warning-soft: oklch(0.965 0.035 85);
   --success: oklch(0.46 0.09 160);
   --success-soft: oklch(0.955 0.03 160);
-  --info: oklch(0.47 0.09 245);
-  --info-soft: oklch(0.96 0.02 245);
-  --border: oklch(0.915 0.005 95);
-  --input: oklch(0.88 0.006 95);
-  --ring: oklch(0.46 0.09 160);
+  --info: oklch(0.5 0.09 210);
+  --info-soft: oklch(0.96 0.022 210);
+  --border: oklch(0.918 0.008 286);
+  --input: oklch(0.885 0.01 286);
+  --ring: oklch(0.52 0.19 279);
   /* Chart series (validated with the dataviz palette checks: CVD ΔE 21.4, normal ΔE 26.2, >= 3:1 on white). */
   --chart-1: #177c52; /* income / single-series */
   --chart-2: #4a3aa7; /* expense */
   --chart-3: #2a78d6;
   --chart-4: #eb6834;
   --chart-5: #e87ba4;
-  --chart-grid: #e8e6e0;
-  --chart-axis: #7d7b75;
+  --chart-grid: #e6e6ee;
+  --chart-axis: #75768a;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0.003 95);
-  --sidebar-foreground: oklch(0.24 0.008 155);
-  --sidebar-primary: oklch(0.46 0.09 160);
-  --sidebar-primary-foreground: oklch(0.985 0.008 160);
-  --sidebar-accent: oklch(0.945 0.006 95);
-  --sidebar-accent-foreground: oklch(0.2 0.008 155);
-  --sidebar-border: oklch(0.915 0.005 95);
-  --sidebar-ring: oklch(0.46 0.09 160);
+  --sidebar: oklch(0.988 0.002 286);
+  --sidebar-foreground: oklch(0.24 0.02 282);
+  --sidebar-primary: oklch(0.52 0.19 279);
+  --sidebar-primary-foreground: oklch(0.985 0.006 285);
+  --sidebar-accent: oklch(0.95 0.012 286);
+  --sidebar-accent-foreground: oklch(0.2 0.02 282);
+  --sidebar-border: oklch(0.918 0.008 286);
+  --sidebar-ring: oklch(0.52 0.19 279);
+  /* Soft lavender behind the companion — the only gradients in the UI. */
+  --companion-from: oklch(0.978 0.012 286);
+  --companion-to: oklch(0.905 0.05 284);
 }
 
 @layer base {
@@ -131,7 +137,7 @@
     @apply rounded-sm outline-2 outline-offset-2 outline-ring;
   }
   ::selection {
-    background: oklch(0.88 0.06 160);
+    background: oklch(0.9 0.05 285);
   }
 }
 
@@ -146,6 +152,133 @@
   }
   .eyebrow {
     @apply text-[0.6875rem] font-medium tracking-[0.12em] text-muted-foreground uppercase;
+  }
+  .bg-companion {
+    background: radial-gradient(115% 115% at 30% 18%, var(--companion-from) 0%, var(--companion-to) 100%);
+  }
+  /* Soft pool of lavender behind a half-body pose; fades out before the container edges. */
+  .bg-companion-glow {
+    background: radial-gradient(closest-side at 50% 62%, var(--companion-to) 0%, transparent 100%);
+    opacity: 0.75;
+  }
+  /* Companion micro-interactions: a gentle arrival, a badge pop and a few sparkle twinkles. */
+  .animate-companion-in {
+    animation: companion-in 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .animate-companion-pop {
+    animation: companion-pop 380ms cubic-bezier(0.2, 0.7, 0.2, 1) 220ms both;
+  }
+  .animate-companion-twinkle {
+    animation: companion-twinkle 1.8s ease-in-out 3;
+  }
+  /* Idle motion, kept tiny: faces tilt ~2°, half-body poses sway ~1° from the hips. */
+  .animate-companion-bob {
+    transform-origin: 50% 100%;
+    animation: companion-bob 5.6s ease-in-out infinite;
+  }
+  .animate-companion-sway {
+    transform-origin: 50% 100%;
+    animation: companion-sway 7s ease-in-out infinite;
+  }
+  /* Routine done: a congratulation badge pops up and floats away; confetti bursts outwards. */
+  .animate-celebrate-pop {
+    animation: celebrate-pop 1150ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  }
+  .animate-celebrate-confetti {
+    animation: celebrate-confetti 750ms cubic-bezier(0.1, 0.6, 0.3, 1) forwards;
+  }
+}
+
+@keyframes companion-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes companion-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  70% {
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes companion-bob {
+  0%,
+  100% {
+    transform: scale(1.06) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.06) rotate(-2.2deg) translateY(-0.5px);
+  }
+}
+
+@keyframes companion-sway {
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  35% {
+    transform: rotate(-1deg) scale(1.012);
+  }
+  70% {
+    transform: rotate(0.7deg) scale(1.004);
+  }
+}
+
+@keyframes celebrate-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3);
+  }
+  16% {
+    opacity: 1;
+    transform: translate(-50%, -105%) scale(1.18);
+  }
+  28% {
+    transform: translate(-50%, -110%) scale(1);
+  }
+  72% {
+    opacity: 1;
+    transform: translate(-50%, -150%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -185%) scale(0.92);
+  }
+}
+
+@keyframes celebrate-confetti {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1);
+  }
+}
+
+@keyframes companion-twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.75) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(18deg);
   }
 }
 

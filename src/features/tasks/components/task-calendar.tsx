@@ -24,13 +24,18 @@ type DayEntry = { type: "task"; task: TaskItem } | { type: "routine"; occurrence
  */
 function RoutineChip({ occurrence, today, size }: { occurrence: RoutineOccurrence; today: ISODate; size: "grid" | "agenda" }) {
   const { openEdit } = useTaskEditor();
-  const { done, toggle, pending } = useRoutineCompletion(occurrence.routine, occurrence.date, occurrence.completed);
+  const { done, toggle, pending, controlRef, celebrations } = useRoutineCompletion(
+    occurrence.routine,
+    occurrence.date,
+    occurrence.completed,
+  );
   const canToggle = occurrence.date <= today;
   const label = canToggle
     ? `${occurrence.routine.title}, ${formatISODate(occurrence.date, "long")}: ${done ? "done" : "not done"}`
     : `${occurrence.routine.title}, routine on ${formatISODate(occurrence.date, "long")}`;
   return (
     <button
+      ref={controlRef}
       type="button"
       onClick={() => (canToggle ? toggle() : openEdit(occurrence.routine))}
       aria-pressed={canToggle ? done : undefined}
@@ -49,6 +54,7 @@ function RoutineChip({ occurrence, today, size }: { occurrence: RoutineOccurrenc
         <Repeat className={cn(size === "grid" ? "size-3" : "size-4", "shrink-0 text-primary")} aria-hidden="true" />
       )}
       <span className={cn("truncate", done && "line-through decoration-success/60")}>{occurrence.routine.title}</span>
+      {celebrations}
     </button>
   );
 }

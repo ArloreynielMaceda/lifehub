@@ -135,6 +135,20 @@ export async function listBillHistory(filters: BillFilters, page: number) {
   return { items, total: count ?? 0 };
 }
 
+/** The earliest active bill or reminder (overdue ones come first), for the companion's nudge. */
+export async function getNextDue() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("bills")
+    .select("title, kind, next_due_date, amount_minor, currency")
+    .eq("status", "active")
+    .order("next_due_date", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  reportQueryError("bills:next-due", error);
+  return data ?? null;
+}
+
 export async function getBillOverview(today: ISODate) {
   const supabase = await createClient();
   const until = addDays(today, UPCOMING_WINDOW_DAYS);

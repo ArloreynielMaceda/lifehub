@@ -134,3 +134,51 @@ Status legend: `[x]` done · `[ ]` pending · `[~]` blocked on an external depen
 | Playwright smoke (desktop + mobile) | ✅ 16 passed (new: expired confirmation page) |
 | Visual QA 320 px / 1280 px | ✅ `/verify-email` states, no horizontal scroll |
 | Full sign-up / settings E2E flows | [~] not run — need a test Supabase project (`TEST_SUPABASE_*`) |
+
+## Iteration 4 — Visual refresh & LifeHub companion (2026-10-02)
+
+- [x] Palette: forest green → indigo accent (`--primary` #5753d2) on clean cool-neutral surfaces; reminders/info moved to teal so they stay distinct from indigo bills; paid/done stays green. All text pairs ≥ 5.2:1 (WCAG AA). Favicon, theme colour and email templates updated.
+- [x] Companion assets: 7 head-and-shoulders expressions cropped from the reference sheet (haze removed, made opaque, ~10–15 KB WebP each) in `src/assets/companion/`. No full-body figures.
+- [x] `Companion` (small face, optional badge/sparkles, decorative `aria-hidden`) and `CompanionNote` (one useful line in a speech bubble) in `src/components/companion/`. At most one per view.
+- [x] Placements: dashboard greeting (mood from real progress: welcome / overdue / all done / evening), finance insight on Expenses, next-due nudge on Bills, "All done" on today's routines, task-completed toast, first-time and all-clear empty states (tasks, routines, bills, expenses, notes, documents, notifications), Email confirmed, 404, landing preview.
+- [x] Micro-interactions: gentle arrival, badge pop, three sparkle twinkles; all disabled by `prefers-reduced-motion`.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` / `npm run lint` | ✅ 0 errors, 0 warnings |
+| `npx vitest run` | ✅ 218 passed, 10 skipped (11 new: dashboard moment, finance insight, bill nudge) |
+| `npm run build` | ✅ success |
+| Playwright smoke (desktop + mobile) | ✅ 16 passed |
+| Visual QA 1280 / 375 / 320 px | ✅ components via a temporary preview page (removed), public pages directly; no horizontal scroll |
+| Signed-in pages with real data | [~] not screenshotted — needs a signed-in account |
+
+## Iteration 5 — Half-body companion for larger moments (2026-10-02)
+
+- [x] Two-level companion system: small faces (unchanged) for micro feedback; half-body poses (`CompanionFigure`, `CompanionBanner`) only for deliberate larger moments.
+- [x] 7 half-body poses cropped from the sheet's second row with their own decorations (wave, chart bubble, bell, documents, sparkles, moon), haze removed, ~13–17 KB WebP each: welcome, planning, finance, reminder, documents, celebrate, evening. No full-body figures.
+- [x] Placements: dashboard welcome area (two columns on tablet+, pose follows the day: welcome / overdue → reminder / all done → celebrate / evening), Expenses insight banner (finance), Bills banner only for overdue/today/tomorrow (reminder), first-use Notes (planning) and empty Documents vault (documents), landing page closing CTA (welcome).
+- [x] Phones: dashboard and banners fall back to the small face so data stays above the fold (first card starts at ~405 px on a 360 px phone); empty states and CTA use a smaller figure.
+- [x] Half-body never on Tasks, Notifications, Settings or inside data cards.
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` / `npm run lint` | ✅ 0 errors, 0 warnings |
+| `npx vitest run` | ✅ 219 passed, 10 skipped |
+| `npm run build` | ✅ success |
+| Playwright smoke (desktop + mobile) | ✅ 16 passed |
+| Visual QA 1280 / 820 / 375 / 360 px | ✅ no horizontal scroll, no console errors |
+
+## Iteration 6 — Motion, routine celebration, time-of-day poses, landing & sign-in (2026-10-02)
+
+- [x] Idle motion: small faces tilt ~2° (5.6 s cycle, staggered per mood); half-body poses sway ~1° from the hips (7 s). Bottom edges are tucked under their container so the sway never shows a gap. Off for `prefers-reduced-motion`.
+- [x] Routine celebration: ticking a routine pops a party-popper badge with a confetti burst from the checkbox (portal, never clipped), then a "“…” done. Nice work!" toast with the happy face (announced to screen readers). Works in the routine list, Today's routines and the calendar.
+- [x] Time-of-day poses: `pose-goodmorning` (wave + sunrise), `pose-goodafternoon` (tablet + sun), `pose-goodevening` (relaxed + sunset), `pose-night` (sleepy + moon, was `pose-evening`). Badges drawn in the sheet's flat style. Dashboard: morning 5–11, afternoon 12–17, evening 18–21, night 22–4; "all done" and "overdue" take over during the day. Small faces get matching sunrise/sun/sunset/moon badges on phones.
+- [x] Landing: "Your companion" section with the four day poses. Sign-in/sign-up: the companion waves from the bottom of the desktop side panel with a greeting; phones show a small face above the heading (one companion per view).
+
+| Check | Result |
+| --- | --- |
+| `npm run typecheck` / `npm run lint` | ✅ 0 errors, 0 warnings |
+| `npx vitest run` | ✅ 220 passed, 10 skipped |
+| `npm run build` | ✅ success |
+| Playwright smoke (desktop + mobile) | ✅ 16 passed |
+| Browser checks | ✅ idle transform changes over time; celebration pop renders and removes itself; toast text; no console errors; no horizontal scroll at 1280 / 375 px |

@@ -1,5 +1,6 @@
 import { CalendarDays, ListChecks, Receipt, Wallet } from "lucide-react";
 
+import { CompanionNote } from "@/components/companion/companion";
 import { DueLabel } from "@/components/shared/due-label";
 import { Money } from "@/components/shared/money";
 import { BillKindIcon } from "@/features/bills/components/bill-list";
@@ -43,6 +44,9 @@ export function ProductPreview({ today }: { today: ISODate }) {
           <div className="px-1 pb-1">
             <p className="eyebrow">{formatISODate(today, "long")}</p>
             <p className="mt-1 font-display text-3xl">Good morning, Ana</p>
+            <CompanionNote mood="happy" className="mt-3 [&_.text-sm]:text-[0.8rem]">
+              You have 1 task due today, 2 bills coming up.
+            </CompanionNote>
           </div>
           <div className="rounded-xl border bg-card p-4">
             <p className="mb-2 flex items-center gap-2 text-sm font-semibold">

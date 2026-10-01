@@ -1,7 +1,13 @@
 import "server-only";
 
 import { getDueSoon } from "@/features/bills/queries";
-import { getFocusTasks, getRoutineViews, getTaskCategories, getTaskCounts } from "@/features/tasks/queries";
+import {
+  getFocusTasks,
+  getRoutineViews,
+  getTaskCategories,
+  getTaskCounts,
+  getTasksDoneToday,
+} from "@/features/tasks/queries";
 import { getMoneyOverview, getRecentTransactions } from "@/features/transactions/queries";
 import { addDays, endOfMonth, startOfMonth, startOfWeek, type ISODate } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
@@ -42,7 +48,7 @@ async function getWeekLoad(today: ISODate): Promise<WeekDay[]> {
 /** Everything the dashboard shows, fetched in parallel from real user data. */
 export async function getDashboardData(today: ISODate, currency: string) {
   const monthEnd = endOfMonth(today);
-  const [counts, focusTasks, routines, categories, bills, reminders, money, recent, week] = await Promise.all([
+  const [counts, focusTasks, routines, categories, bills, reminders, money, recent, week, tasksDoneToday] = await Promise.all([
     getTaskCounts(today),
     getFocusTasks(today, 6),
     getRoutineViews(today),
@@ -52,9 +58,11 @@ export async function getDashboardData(today: ISODate, currency: string) {
     getMoneyOverview(startOfMonth(today), monthEnd, today, currency),
     getRecentTransactions(5),
     getWeekLoad(today),
+    getTasksDoneToday(today),
   ]);
   return {
     counts,
+    tasksDoneToday,
     focusTasks,
     routines,
     categories,

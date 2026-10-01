@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { CompanionFigure, type CompanionPose } from "@/components/companion/companion";
 import { AccountDeletedNotice } from "@/components/marketing/account-deleted-notice";
 import { Faq } from "@/components/marketing/faq";
 import { ProductPreview } from "@/components/marketing/product-preview";
@@ -73,6 +74,19 @@ const STEPS = [
     title: "Check in once a day",
     text: "Your dashboard shows what's due, what you've spent this month and what's coming next. That's it.",
   },
+];
+
+const DAY_POSES: { pose: CompanionPose; label: string; text: string; phase: string }[] = [
+  { pose: "goodmorning", label: "Good morning", text: "A wave and today's plan.", phase: "[animation-delay:0s]" },
+  { pose: "goodafternoon", label: "Good afternoon", text: "What's left, at a glance.", phase: "[animation-delay:-1.8s]" },
+  { pose: "goodevening", label: "Good evening", text: "A calm wrap-up.", phase: "[animation-delay:-3.6s]" },
+  { pose: "night", label: "Good night", text: "Time to rest.", phase: "[animation-delay:-5.4s]" },
+];
+
+const COMPANION_POINTS = [
+  "Greets you by the time of day",
+  "Celebrates the routines and tasks you finish",
+  "Points out the bill that needs attention",
 ];
 
 const PRIVACY_POINTS = [
@@ -220,6 +234,43 @@ export default function LandingPage() {
       </section>
 
       {/* Privacy */}
+      {/* Companion */}
+      <section id="companion" aria-labelledby="companion-heading" className="scroll-mt-20 border-t bg-canvas">
+        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-center lg:gap-14">
+          <div>
+            <p className="eyebrow">Your companion</p>
+            <h2 id="companion-heading" className="mt-4 font-display text-4xl leading-tight sm:text-5xl">
+              A friendly nudge, <em className="text-primary">never</em> in the way.
+            </h2>
+            <p className="mt-5 max-w-md leading-relaxed text-muted-foreground">
+              A small companion keeps you company through the day — always beside your tasks, bills and
+              numbers, never instead of them.
+            </p>
+            <ul className="mt-6 space-y-2.5 text-sm">
+              {COMPANION_POINTS.map((point) => (
+                <li key={point} className="flex items-center gap-2">
+                  <Check className="size-4 shrink-0 text-primary" aria-hidden="true" /> {point}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {DAY_POSES.map(({ pose, label, text, phase }) => (
+              <li key={pose} className="overflow-hidden rounded-2xl border bg-card">
+                <div aria-hidden="true" className="relative flex h-36 items-end justify-center overflow-hidden sm:h-40">
+                  <span className="absolute inset-0 bg-companion-glow" />
+                  <CompanionFigure pose={pose} className={`relative h-32 sm:h-36 ${phase}`} />
+                </div>
+                <div className="border-t px-3 py-2.5">
+                  <p className="text-sm font-medium">{label}</p>
+                  <p className="text-xs text-muted-foreground">{text}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
       <section id="privacy" aria-labelledby="privacy-heading" className="scroll-mt-20 border-t bg-foreground text-background">
         <div className="mx-auto grid max-w-7xl gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
           <div>
@@ -264,20 +315,27 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section aria-labelledby="cta-heading" className="border-t">
-        <div className="mx-auto flex max-w-7xl flex-col items-start gap-6 px-5 py-20 sm:px-8 md:flex-row md:items-end md:justify-between">
-          <h2 id="cta-heading" className="max-w-xl font-display text-4xl leading-tight sm:text-5xl">
-            Give everyday life a single, <em className="text-primary">quiet</em> home.
-          </h2>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button asChild size="lg" className="h-11 px-6">
-              <Link href="/signup">
-                Get started free <ArrowRight aria-hidden="true" />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="h-11 px-6">
-              <Link href="/login">I have an account</Link>
-            </Button>
+      <section aria-labelledby="cta-heading" className="overflow-hidden border-t">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-end gap-x-10 px-5 pt-20 sm:px-8 md:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="flex flex-col items-start gap-6 pb-8 md:pb-20 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
+            <h2 id="cta-heading" className="max-w-xl font-display text-4xl leading-tight sm:text-5xl">
+              Give everyday life a single, <em className="text-primary">quiet</em> home.
+            </h2>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button asChild size="lg" className="h-11 px-6">
+                <Link href="/signup">
+                  Get started free <ArrowRight aria-hidden="true" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="h-11 px-6">
+                <Link href="/login">I have an account</Link>
+              </Button>
+            </div>
+          </div>
+          {/* The companion waves goodbye from the bottom edge of the page's closing section. */}
+          <div aria-hidden="true" className="relative mx-auto flex w-60 justify-center md:w-auto">
+            <span className="absolute inset-0 bg-companion-glow" />
+            <CompanionFigure pose="welcome" className="relative h-40 md:h-56" />
           </div>
         </div>
       </section>
